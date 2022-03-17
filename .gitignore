@@ -34,3 +34,7 @@
 # IDE files
 .idea/
 .vscode/
+
+#cmake
+cmake-build-debug/
+build/
