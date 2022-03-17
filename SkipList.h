@@ -1,9 +1,8 @@
 #ifndef RAFT_KV_SKIPLIST_H
 #define RAFT_KV_SKIPLIST_H
 
-#include "cstdlib"
-#include "cstring"
 #include "iostream"
+#include "cstring"
 
 template <typename K, typename V> class SkipList;
 
@@ -17,7 +16,7 @@ public:
 
   K getKey() const;
   V getValue() const;
-  void setValue(V newV);
+  void setValue(V value);
 
 private:
   K key;
@@ -28,7 +27,7 @@ private:
 
 template <typename K, typename V>
 Node<K, V>::Node(const K k, const V v, int level)
-    : K(k), V(v), nodeLevel(level) {
+    : key(k), value(v), nodeLevel(level) {
   this->forward = new Node<K, V> *[level + 1];
   memset(this->forward, 0, sizeof(Node<K, V> *) * (level + 1));
 }
@@ -50,7 +49,6 @@ public:
   explicit SkipList(int maxlevel);
   ~SkipList();
 
-  Node<K, V> *createNode(K, V, int);
   bool searchElement(K);
   bool insertElement(K, V);
   void deleteElement(K);
@@ -58,6 +56,7 @@ public:
   void displayList();
 
 private:
+  Node<K, V> *createNode(K, V, int);
   int getRandomLevel();
 
   int maxLevel;
@@ -100,6 +99,7 @@ template <typename K, typename V>
 bool SkipList<K, V>::insertElement(K key, V value) {
   Node<K, V> *current = header;
   Node<K, V> *prevNodes[maxLevel + 1];
+  memset(prevNodes, 0, sizeof(Node<K, V> *) * (maxLevel + 1));
 
   for (int i = skipListLevel; i >= 0; --i) {
     while (current->forward[i] && current->forward[i]->getKey() < key) {
@@ -108,19 +108,23 @@ bool SkipList<K, V>::insertElement(K key, V value) {
     prevNodes[i] = current;
   }
   current = current->forward[0];
+
   if (!current || current->getKey() != key) {
     int randomLevel = getRandomLevel();
-    if (randomLevel > maxLevel) {
-      for (int i = randomLevel + 1; i < maxLevel; ++i) {
+    if (randomLevel > skipListLevel) {
+      for (int i = skipListLevel + 1; i <= randomLevel; ++i) {
         prevNodes[i] = header;
       }
       skipListLevel = randomLevel;
     }
+
     Node<K, V> *newNode = createNode(key, value, randomLevel);
+
     for (int i = 0; i <= randomLevel; ++i) {
       newNode->forward[i] = prevNodes[i]->forward[i];
       prevNodes[i]->forward[i] = newNode;
     }
+
     ++elementCount;
     return true;
   }
@@ -156,15 +160,16 @@ template <typename K, typename V> int SkipList<K, V>::size() {
 }
 
 template <typename K, typename V> void SkipList<K, V>::displayList() {
-  cout << "displayList:" << endl;
-  for (int i = 0; i <= skipListLevel; ++i) {
+  std::cout << "displayList, "
+            << "size: " << elementCount << std::endl;
+  for (int i = skipListLevel; i >= 0; --i) {
     Node<K, V> *node = this->header->forward[i];
-    cout << "Level " << i << ": ";
+    std::cout << "Level " << i << ": ";
     while (node) {
-      cout << "[" << node->getKey() << "," << node->getValue() << "];";
+      std::cout << "[" << node->getKey() << "," << node->getValue() << "];";
       node = node->forward[i];
     }
-    cout << endl;
+    std::cout << std::endl;
   }
 }
 template <typename K, typename V> int SkipList<K, V>::getRandomLevel() {
