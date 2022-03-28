@@ -1,8 +1,8 @@
 #ifndef RAFT_KV_SKIPLIST_H
 #define RAFT_KV_SKIPLIST_H
 
-#include "iostream"
 #include "cstring"
+#include "iostream"
 
 template <typename K, typename V> class SkipList;
 
@@ -47,11 +47,13 @@ template <typename K, typename V> void Node<K, V>::setValue(V value) {
 template <typename K, typename V> class SkipList {
 public:
   explicit SkipList(int maxlevel);
+  SkipList(const SkipList &) = delete;
+  SkipList &operator=(const SkipList &) = delete;
   ~SkipList();
 
-  bool searchElement(K);
-  bool insertElement(K, V);
-  void deleteElement(K);
+  bool searchElement(const K &key);
+  bool insertElement(const K &key, const V &value);
+  void deleteElement(const K &key);
   int size();
   void displayList();
 
@@ -82,7 +84,8 @@ Node<K, V> *SkipList<K, V>::createNode(const K k, const V v, int level) {
   return node;
 }
 
-template <typename K, typename V> bool SkipList<K, V>::searchElement(K key) {
+template <typename K, typename V>
+bool SkipList<K, V>::searchElement(const K &key) {
   Node<K, V> *current = header;
   for (int i = skipListLevel; i >= 0; --i) {
     while (current->forward[i] && current->forward[i]->getKey() < key) {
@@ -96,7 +99,7 @@ template <typename K, typename V> bool SkipList<K, V>::searchElement(K key) {
 }
 
 template <typename K, typename V>
-bool SkipList<K, V>::insertElement(K key, V value) {
+bool SkipList<K, V>::insertElement(const K &key, const V &value) {
   Node<K, V> *current = header;
   Node<K, V> *prevNodes[maxLevel + 1];
   memset(prevNodes, 0, sizeof(Node<K, V> *) * (maxLevel + 1));
@@ -130,7 +133,8 @@ bool SkipList<K, V>::insertElement(K key, V value) {
   }
   return false;
 }
-template <typename K, typename V> void SkipList<K, V>::deleteElement(K key) {
+template <typename K, typename V>
+void SkipList<K, V>::deleteElement(const K &key) {
   Node<K, V> *current = header;
   Node<K, V> *prevNodes[maxLevel + 1];
 
