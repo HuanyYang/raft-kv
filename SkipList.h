@@ -2,7 +2,9 @@
 #define RAFT_KV_SKIPLIST_H
 
 #include "cstring"
+#include "ctime"
 #include "iostream"
+#include "random"
 
 template <typename K, typename V> class SkipList;
 
@@ -177,8 +179,11 @@ template <typename K, typename V> void SkipList<K, V>::displayList() {
   }
 }
 template <typename K, typename V> int SkipList<K, V>::getRandomLevel() {
+  static std::default_random_engine engine(time(0));
+  static std::uniform_int_distribution<unsigned> ud(1, 100);
+
   int level = 1;
-  while (rand() % 2 && level < maxLevel)
+  while (ud(engine) % 2 && level < maxLevel)
     ++level;
   return level;
 }
