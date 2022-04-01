@@ -23,9 +23,9 @@ WAL::~WAL() {
     logReader_.close();
 }
 
-bool WAL::AddRecord(const std::string &record) {
+bool WAL::AddRecord(const std::string &key, const std::string &value) {
   logWriter_.open(logPath_, std::ios_base::app);
-  logWriter_ << record << "\n";
+  logWriter_ << key << delimiter << value << "\n";
   logWriter_.flush();
   logWriter_.close();
   return true;

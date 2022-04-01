@@ -98,8 +98,9 @@ bool SkipList<K, V>::searchElement(const K &key, K &value) {
     }
   }
   current = current->forward[0];
+  // value为空表示已被删除
   if (current && current->getKey() == key) {
-    value = current->value;
+    value = current->getValue();
     return true;
   }
   return false;
@@ -137,6 +138,9 @@ bool SkipList<K, V>::insertElement(const K &key, const V &value) {
 
     ++elementCount;
     return true;
+  } else {
+    // key相同则替换
+    current->setValue(value);
   }
   return false;
 }

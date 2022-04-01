@@ -15,7 +15,7 @@ public:
 
   ~WAL();
 
-  bool AddRecord(const std::string &record);
+  bool AddRecord(const std::string &key, const std::string &value);
 
   // 将WAL中的内容恢复到memtable
   bool LoadLogToMem(memtable *mem);

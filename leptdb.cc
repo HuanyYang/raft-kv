@@ -21,16 +21,21 @@ Leptdb::~Leptdb() {
 }
 
 bool Leptdb::Put(const std::string &key, const std::string &value) {
-  return wtable_->insertElement(key, value);
+  if (wtableLog_->AddRecord(key, value)) {
+    return wtable_->insertElement(key, value);
+  }
+  return false;
 }
 
-bool Leptdb::Delete(const std::string &key) {
-  return wtable_->insertElement(key, "");
-}
+bool Leptdb::Delete(const std::string &key) { return Put(key, ""); }
 
 bool Leptdb::Get(const std::string &key, std::string value) {
-  if (wtable_->searchElement(key, value) || rtable_->searchElement(key, value))
-    return true;
+  if (wtable_->searchElement(key, value) ||
+      rtable_->searchElement(key, value)) {
+    if (!value.empty())
+      return true;
+  }
+  // TODO, search sst
   return false;
 }
 
