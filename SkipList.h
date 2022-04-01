@@ -3,14 +3,13 @@
 
 #include "cstring"
 #include "ctime"
-#include "fstream"
 #include "iostream"
 #include "random"
 
-#define FILE_PATH "dumpFile"
-char delimiter = ':';
+const int defaultLevel = 10;
 
 template <typename K, typename V> class SkipList;
+using memtable = SkipList<std::string, std::string>;
 
 template <typename K, typename V> class Node {
   friend class SkipList<K, V>;
@@ -52,31 +51,25 @@ template <typename K, typename V> void Node<K, V>::setValue(V value) {
 
 template <typename K, typename V> class SkipList {
 public:
-  explicit SkipList(int maxlevel);
+  explicit SkipList(int maxlevel = defaultLevel);
   SkipList(const SkipList &) = delete;
   SkipList &operator=(const SkipList &) = delete;
   ~SkipList();
 
-  bool searchElement(const K &key);
+  bool searchElement(const K &key, K &value);
   bool insertElement(const K &key, const V &value);
   void deleteElement(const K &key);
   int size();
   void displayList();
 
-  void dumpFile();
-  void loadFile();
-
 private:
   Node<K, V> *createNode(K, V, int);
   int getRandomLevel();
-  void split(const std::string &str, std::string &key, std::string &value);
 
   int maxLevel;
   int skipListLevel;
   Node<K, V> *header;
   int elementCount;
-  std::ofstream fileWriter;
-  std::ifstream fileReader;
 };
 
 template <typename K, typename V> SkipList<K, V>::SkipList(int maxlevel) {
@@ -88,13 +81,7 @@ template <typename K, typename V> SkipList<K, V>::SkipList(int maxlevel) {
   header = new Node<K, V>(k, v, maxlevel);
 }
 
-template <typename K, typename V> SkipList<K, V>::~SkipList() {
-  if (fileWriter.is_open())
-    fileWriter.close();
-  if (fileReader.is_open())
-    fileReader.close();
-  delete header;
-}
+template <typename K, typename V> SkipList<K, V>::~SkipList() { delete header; }
 
 template <typename K, typename V>
 Node<K, V> *SkipList<K, V>::createNode(const K k, const V v, int level) {
@@ -103,7 +90,7 @@ Node<K, V> *SkipList<K, V>::createNode(const K k, const V v, int level) {
 }
 
 template <typename K, typename V>
-bool SkipList<K, V>::searchElement(const K &key) {
+bool SkipList<K, V>::searchElement(const K &key, K &value) {
   Node<K, V> *current = header;
   for (int i = skipListLevel; i >= 0; --i) {
     while (current->forward[i] && current->forward[i]->getKey() < key) {
@@ -111,8 +98,10 @@ bool SkipList<K, V>::searchElement(const K &key) {
     }
   }
   current = current->forward[0];
-  if (current && current->getKey() == key)
+  if (current && current->getKey() == key) {
+    value = current->value;
     return true;
+  }
   return false;
 }
 
@@ -195,29 +184,6 @@ template <typename K, typename V> void SkipList<K, V>::displayList() {
   }
 }
 
-template <typename K, typename V> void SkipList<K, V>::dumpFile() {
-  fileWriter.open(FILE_PATH);
-  Node<K, V> *node = this->header->forward[0];
-  while (node) {
-    fileWriter << node->getKey() << ":" << node->getValue() << "\n";
-    node = node->forward[0];
-  }
-  fileWriter.flush();
-  fileWriter.close();
-}
-
-template <typename K, typename V> void SkipList<K, V>::loadFile() {
-  fileReader.open(FILE_PATH);
-  std::string line, key, value;
-  while (getline(fileReader, line)) {
-    split(line, key, value);
-    if (key.empty() || value.empty())
-      continue;
-    insertElement(key, value);
-  }
-  fileReader.close();
-}
-
 template <typename K, typename V> int SkipList<K, V>::getRandomLevel() {
   static std::default_random_engine engine(time(0));
   static std::uniform_int_distribution<unsigned> ud(1, 100);
@@ -226,16 +192,6 @@ template <typename K, typename V> int SkipList<K, V>::getRandomLevel() {
   while (ud(engine) % 2 && level < maxLevel)
     ++level;
   return level;
-}
-
-template <typename K, typename V>
-void SkipList<K, V>::split(const std::string &str, std::string &key,
-                           std::string &value) {
-  if (str.empty() || str.find(delimiter) == std::string::npos) {
-    return;
-  }
-  key = str.substr(0, str.find(delimiter));
-  value = str.substr(str.find(delimiter) + 1, str.size());
 }
 
 #endif // RAFT_KV_SKIPLIST_H

@@ -6,4 +6,4 @@ set(CMAKE_C_STANDARD 11)
 include_directories(.)
 
 add_executable(raft_kv main.cpp
-        SkipList.h main.cpp)
+        SkipList.h wal.h wal.cc leptdb.h leptdb.cc)

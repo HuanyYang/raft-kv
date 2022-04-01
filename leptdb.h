@@ -7,7 +7,7 @@
 
 class Leptdb {
 public:
-  Leptdb(const std::string &dbname);
+  explicit Leptdb(const std::string &dbname);
 
   Leptdb(const Leptdb &) = delete;
   Leptdb &operator=(const Leptdb &) = delete;
@@ -18,15 +18,22 @@ public:
   bool Delete(const std::string &key);
   bool Get(const std::string &key, std::string value);
 
+  void CheckCompaction();
+
+  void ShowWtable();
+  void ShowRtable();
+
 private:
+  bool CreateDir();
   bool RecoverLogFile();
   bool MakeRoomForWrite();
 
   const std::string dbname_;
 
-  SkipList<std::string, std::string> *wtable_;
-  SkipList<std::string, std::string> *rtable_;
-  WAL *logfile_;
+  memtable *wtable_;
+  memtable *rtable_;
+  WAL *wtableLog_;
+  WAL *rtableLog_;
 };
 
 #endif // RAFT_KV_Leptdb_H
