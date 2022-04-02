@@ -66,8 +66,11 @@ bool Leptdb::RecoverLogFile() {
 }
 
 // 将rtable写入sst，清空skipList和wal
+// TODO flush rtable -> sst
 bool Leptdb::Flush() {
   std::cout << "Flush" << std::endl;
+  // TODO first check level-0 sst dump
+  FlushRTable();
   return false;
 }
 
@@ -76,8 +79,7 @@ void Leptdb::MakeRoomForWrite() {
     if (memtableSize_ < MEMTableSizeLimit) {
       break;
     } else if (rtable_->elementCount() > 0) {
-      // wtable满且rtable非空，等待flush
-      // TODO flush rtable -> sst
+      // wtable满且rtable非空，flush rtable -> sst
       Flush();
     } else {
       // wtable dump为rtable，目前用替换实现
@@ -89,4 +91,9 @@ void Leptdb::MakeRoomForWrite() {
   }
 }
 
-void Leptdb::CheckCompaction() { std::cout << "CheckCompaction" << std::endl; }
+void Leptdb::FlushRTable() {
+  // 直接dump成level-0的sst
+  std::cout << "FlushRTable" << std::endl;
+
+}
+void Leptdb::CompactSST() {}

@@ -1,7 +1,7 @@
 #ifndef RAFT_KV_LEPTDB_H
 #define RAFT_KV_LEPTDB_H
 
-#include "SkipList.h"
+#include "skiplist.h"
 #include "string"
 #include "wal.h"
 
@@ -28,7 +28,8 @@ private:
   bool RecoverLogFile();
   bool Flush();
   void MakeRoomForWrite();
-  void CheckCompaction();
+  void FlushRTable();
+  void CompactSST();
 
   const std::string dbname_;
 

@@ -1,14 +1,6 @@
 #include "wal.h"
 #include <unistd.h>
 
-void splitKV(const std::string &str, std::string &key, std::string &value) {
-  if (str.empty() || str.find(delimiter) == std::string::npos) {
-    return;
-  }
-  key = str.substr(0, str.find(delimiter));
-  value = str.substr(str.find(delimiter) + 1, str.size());
-}
-
 // WAL不存在则创建
 WAL::WAL(const std::string &logPath) : logPath_(logPath) {
   if (access(logPath_.c_str(), F_OK) != 0) {
@@ -60,4 +52,12 @@ bool LoadCurLogToOldLog(WAL *cur, WAL *old) {
   old->logWriter_.flush();
   old->logWriter_.close();
   return true;
+}
+
+void splitKV(const std::string &str, std::string &key, std::string &value) {
+  if (str.empty() || str.find(delimiter) == std::string::npos) {
+    return;
+  }
+  key = str.substr(0, str.find(delimiter));
+  value = str.substr(str.find(delimiter) + 1, str.size());
 }

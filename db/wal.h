@@ -1,8 +1,8 @@
 #ifndef RAFT_KV_WAL_H
 #define RAFT_KV_WAL_H
 
-#include "SkipList.h"
 #include "fstream"
+#include "skiplist.h"
 
 const char delimiter = ':';
 
@@ -29,5 +29,7 @@ private:
 };
 
 bool LoadCurLogToOldLog(WAL *cur, WAL *old);
+
+void splitKV(const std::string &str, std::string &key, std::string &value);
 
 #endif // RAFT_KV_WAL_H
