@@ -59,7 +59,8 @@ public:
   bool searchElement(const K &key, K &value);
   bool insertElement(const K &key, const V &value);
   void deleteElement(const K &key);
-  int size();
+
+  int elementCount();
   void displayList();
 
 private:
@@ -69,13 +70,14 @@ private:
   int maxLevel;
   int skipListLevel;
   Node<K, V> *header;
-  int elementCount;
+  int elementCount_;
 };
 
 template <typename K, typename V> SkipList<K, V>::SkipList(int maxlevel) {
   maxLevel = maxlevel;
   skipListLevel = 0;
-  elementCount = 0;
+  elementCount_ = 0;
+
   K k;
   V v;
   header = new Node<K, V>(k, v, maxlevel);
@@ -136,7 +138,7 @@ bool SkipList<K, V>::insertElement(const K &key, const V &value) {
       prevNodes[i]->forward[i] = newNode;
     }
 
-    ++elementCount;
+    ++elementCount_;
     return true;
   } else {
     // key相同则替换
@@ -166,17 +168,16 @@ void SkipList<K, V>::deleteElement(const K &key) {
       --skipListLevel;
     }
     delete current;
-    --elementCount;
+    --elementCount_;
   }
 }
 
-template <typename K, typename V> int SkipList<K, V>::size() {
-  return elementCount;
+template <typename K, typename V> int SkipList<K, V>::elementCount() {
+  return elementCount_;
 }
 
 template <typename K, typename V> void SkipList<K, V>::displayList() {
-  std::cout << "displayList, "
-            << "size: " << elementCount << std::endl;
+  std::cout << "elementCount_: " << elementCount_ << std::endl;
   for (int i = skipListLevel; i >= 0; --i) {
     Node<K, V> *node = this->header->forward[i];
     std::cout << "Level " << i << ": ";

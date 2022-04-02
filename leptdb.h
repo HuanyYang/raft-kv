@@ -5,6 +5,8 @@
 #include "string"
 #include "wal.h"
 
+const size_t MEMTableSizeLimit = 512;
+
 class Leptdb {
 public:
   explicit Leptdb(const std::string &dbname);
@@ -18,15 +20,15 @@ public:
   bool Delete(const std::string &key);
   bool Get(const std::string &key, std::string value);
 
-  void CheckCompaction();
-
   void ShowWtable();
   void ShowRtable();
 
 private:
   bool CreateDir();
   bool RecoverLogFile();
-  bool MakeRoomForWrite();
+  bool Flush();
+  void MakeRoomForWrite();
+  void CheckCompaction();
 
   const std::string dbname_;
 
@@ -34,6 +36,8 @@ private:
   memtable *rtable_;
   WAL *wtableLog_;
   WAL *rtableLog_;
+
+  size_t memtableSize_;
 };
 
-#endif // RAFT_KV_Leptdb_H
+#endif // RAFT_KV_LEPTDB_H

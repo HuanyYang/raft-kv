@@ -31,13 +31,33 @@ bool WAL::AddRecord(const std::string &key, const std::string &value) {
   return true;
 }
 
-bool WAL::LoadLogToMem(SkipList<std::string, std::string> *mem) {
+size_t WAL::LoadLogToMem(SkipList<std::string, std::string> *mem) {
   logReader_.open(logPath_);
   std::string line, key, value;
+  size_t size = 0;
   while (getline(logReader_, line)) {
     splitKV(line, key, value);
     mem->insertElement(key, value);
+    size += key.size();
+    size += value.size();
   }
   logReader_.close();
+  return size;
+}
+
+bool LoadCurLogToOldLog(WAL *cur, WAL *old) {
+  std::cout << "LoadCurLogToOldLog" << std::endl;
+  cur->logReader_.open(cur->logPath_);
+  old->logWriter_.open(old->logPath_, std::ios_base::app);
+  std::string line;
+  while (getline(cur->logReader_, line)) {
+    old->logWriter_ << line << "\n";
+  }
+  // 清空curLog
+  cur->logReader_.close();
+  cur->logWriter_.open(cur->logPath_);
+  cur->logWriter_.close();
+  old->logWriter_.flush();
+  old->logWriter_.close();
   return true;
 }
