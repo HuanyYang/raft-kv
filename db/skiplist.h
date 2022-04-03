@@ -60,8 +60,13 @@ public:
   bool insertElement(const K &key, const V &value);
   void deleteElement(const K &key);
 
+  Node<K, V> *Iter();
+  void ForwardIter(Node<K, V> *&iter);
+
   int elementCount();
   void displayList();
+
+  void Clear();
 
 private:
   Node<K, V> *createNode(K, V, int);
@@ -83,7 +88,10 @@ template <typename K, typename V> SkipList<K, V>::SkipList(int maxlevel) {
   header = new Node<K, V>(k, v, maxlevel);
 }
 
-template <typename K, typename V> SkipList<K, V>::~SkipList() { delete header; }
+template <typename K, typename V> SkipList<K, V>::~SkipList() {
+  Clear();
+  delete header;
+}
 
 template <typename K, typename V>
 Node<K, V> *SkipList<K, V>::createNode(const K k, const V v, int level) {
@@ -139,13 +147,13 @@ bool SkipList<K, V>::insertElement(const K &key, const V &value) {
     }
 
     ++elementCount_;
-    return true;
   } else {
     // key相同则替换
     current->setValue(value);
   }
-  return false;
+  return true;
 }
+
 template <typename K, typename V>
 void SkipList<K, V>::deleteElement(const K &key) {
   Node<K, V> *current = header;
@@ -170,6 +178,16 @@ void SkipList<K, V>::deleteElement(const K &key) {
     delete current;
     --elementCount_;
   }
+}
+
+template <typename K, typename V> Node<K, V> *SkipList<K, V>::Iter() {
+  return header->forward[0];
+}
+
+template <typename K, typename V>
+void SkipList<K, V>::ForwardIter(Node<K, V> *&iter) {
+  if (iter)
+    iter = iter->forward[0];
 }
 
 template <typename K, typename V> int SkipList<K, V>::elementCount() {
@@ -197,6 +215,16 @@ template <typename K, typename V> int SkipList<K, V>::getRandomLevel() {
   while (ud(engine) % 2 && level < maxLevel)
     ++level;
   return level;
+}
+
+template <typename K, typename V> void SkipList<K, V>::Clear() {
+  Node<K, V> *p = header->forward[0], *latter;
+  while (elementCount_-- > 0) {
+    latter = p->forward[0];
+    delete p;
+    p = latter;
+  }
+  memset(header->forward, 0, sizeof(Node<K, V> *) * (header->nodeLevel + 1));
 }
 
 #endif // RAFT_KV_SKIPLIST_H

@@ -1,12 +1,7 @@
 #include "wal.h"
-#include <unistd.h>
+#include "unistd.h"
 
-// WAL不存在则创建
-WAL::WAL(const std::string &logPath) : logPath_(logPath) {
-  if (access(logPath_.c_str(), F_OK) != 0) {
-    logWriter_.open(logPath_);
-  }
-}
+WAL::WAL(const std::string &logPath) : logPath_(logPath) {}
 
 WAL::~WAL() {
   if (logWriter_.is_open())
@@ -38,20 +33,22 @@ size_t WAL::LoadLogToMem(SkipList<std::string, std::string> *mem) {
 }
 
 bool LoadCurLogToOldLog(WAL *cur, WAL *old) {
-  std::cout << "LoadCurLogToOldLog" << std::endl;
   cur->logReader_.open(cur->logPath_);
   old->logWriter_.open(old->logPath_, std::ios_base::app);
   std::string line;
   while (getline(cur->logReader_, line)) {
     old->logWriter_ << line << "\n";
   }
-  // 清空curLog
+
   cur->logReader_.close();
-  cur->logWriter_.open(cur->logPath_);
-  cur->logWriter_.close();
+  cur->ClearLog();
   old->logWriter_.flush();
   old->logWriter_.close();
   return true;
+}
+void WAL::ClearLog() {
+  logWriter_.open(logPath_);
+  logWriter_.close();
 }
 
 void splitKV(const std::string &str, std::string &key, std::string &value) {

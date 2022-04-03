@@ -20,6 +20,8 @@ public:
   // 将WAL中的内容恢复到memtable
   size_t LoadLogToMem(memtable *mem);
 
+  void ClearLog();
+
 private:
   std::string logPath_;
   std::ofstream logWriter_;

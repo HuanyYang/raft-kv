@@ -1,6 +1,7 @@
 #ifndef RAFT_KV_LEPTDB_H
 #define RAFT_KV_LEPTDB_H
 
+#include "manifest.h"
 #include "skiplist.h"
 #include "string"
 #include "wal.h"
@@ -22,13 +23,16 @@ public:
 
   void ShowWtable();
   void ShowRtable();
+  void ShowManifest();
+  size_t getMemtableSize();
 
 private:
   bool CreateDir();
   bool RecoverLogFile();
-  bool Flush();
   void MakeRoomForWrite();
+  bool Flush();
   void FlushRTable();
+  void BuildSST(int level, int seq);
   void CompactSST();
 
   const std::string dbname_;
@@ -39,6 +43,8 @@ private:
   WAL *rtableLog_;
 
   size_t memtableSize_;
+
+  Manifest *manifest;
 };
 
 #endif // RAFT_KV_LEPTDB_H

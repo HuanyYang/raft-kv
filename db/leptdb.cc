@@ -4,11 +4,14 @@
 Leptdb::Leptdb(const std::string &dbname)
     : dbname_(dbname), wtable_(new memtable), rtable_(new memtable),
       wtableLog_(new WAL(dbname + "/cur.log")),
-      rtableLog_(new WAL(dbname + "/old.log")), memtableSize_(0) {
+      rtableLog_(new WAL(dbname + "/old.log")), memtableSize_(0),
+      manifest(new Manifest(dbname + "/manifest")) {
   this->CreateDir();
+  this->manifest->RecoverManifest();
   this->RecoverLogFile();
   std::cout << "open DB: " << dbname << ", memtableSize: " << memtableSize_
             << std::endl;
+  ShowManifest();
 }
 
 Leptdb::~Leptdb() {
@@ -27,9 +30,8 @@ bool Leptdb::Put(const std::string &key, const std::string &value) {
   if (wtableLog_->AddRecord(key, value) && wtable_->insertElement(key, value)) {
     memtableSize_ += key.size();
     memtableSize_ += value.size();
-    return true;
   }
-  return false;
+  return true;
 }
 
 bool Leptdb::Delete(const std::string &key) { return Put(key, ""); }
@@ -40,7 +42,7 @@ bool Leptdb::Get(const std::string &key, std::string value) {
     if (!value.empty())
       return true;
   }
-  // TODO, search sst
+  // TODO search sst
   return false;
 }
 
@@ -53,6 +55,10 @@ void Leptdb::ShowRtable() {
   rtable_->displayList();
 }
 
+void Leptdb::ShowManifest() { manifest->ShowManifest(); }
+
+size_t Leptdb::getMemtableSize() { return memtableSize_; }
+
 bool Leptdb::CreateDir() {
   if (mkdir(dbname_.data(), S_IRWXU) != 0)
     return false;
@@ -63,15 +69,6 @@ bool Leptdb::RecoverLogFile() {
   memtableSize_ += wtableLog_->LoadLogToMem(wtable_);
   rtableLog_->LoadLogToMem(rtable_);
   return true;
-}
-
-// 将rtable写入sst，清空skipList和wal
-// TODO flush rtable -> sst
-bool Leptdb::Flush() {
-  std::cout << "Flush" << std::endl;
-  // TODO first check level-0 sst dump
-  FlushRTable();
-  return false;
 }
 
 void Leptdb::MakeRoomForWrite() {
@@ -91,9 +88,41 @@ void Leptdb::MakeRoomForWrite() {
   }
 }
 
+bool Leptdb::Flush() {
+  // TODO first check level-0 sst dump
+  FlushRTable();
+  return true;
+}
+
 void Leptdb::FlushRTable() {
   // 直接dump成level-0的sst
-  std::cout << "FlushRTable" << std::endl;
-
+  // 清空rtalbe_和rtableLog_
+  int count = manifest->getLeveCount(0) + 1;
+  BuildSST(0, count);
+  manifest->setLevelCount(0, count);
+  rtable_->Clear();
+  rtableLog_->ClearLog();
 }
+
+std::string makeSeq(int seq) {
+  if (seq < 10) {
+    return "0" + std::to_string(seq);
+  } else {
+    return std::to_string(seq);
+  }
+}
+
+void Leptdb::BuildSST(int level, int seq) {
+  std::string sstPath = dbname_ + "/" + makeSeq(level) + makeSeq(seq) + ".sst";
+  std::ofstream ofs(sstPath);
+
+  auto iter = rtable_->Iter();
+  while (iter) {
+    ofs << iter->getKey() << delimiter << iter->getValue() << "\n";
+    rtable_->ForwardIter(iter);
+  }
+  ofs.flush();
+  ofs.close();
+}
+
 void Leptdb::CompactSST() {}
