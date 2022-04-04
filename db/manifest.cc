@@ -26,6 +26,10 @@ void Manifest::ShowManifest() {
   }
 }
 
+int Manifest::getTotalLevel() {
+  return levelCounter_.size();
+}
+
 int Manifest::getLeveCount(int level) { return levelCounter_[level]; }
 
 void Manifest::setLevelCount(int level, int count) {

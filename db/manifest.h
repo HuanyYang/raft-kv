@@ -20,6 +20,7 @@ public:
   void RecoverManifest();
   void ShowManifest();
 
+  int getTotalLevel();
   int getLeveCount(int level);
   void setLevelCount(int level, int count);
 

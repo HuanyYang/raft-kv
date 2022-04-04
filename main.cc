@@ -1,8 +1,8 @@
 #include "db/leptdb.h"
 
 int main() {
-  int num = 200;
   Leptdb leptdb("myLeptDB");
+  int num = 20;
   while (num--) {
     std::cout << "---------------" << num << "---------------" << std::endl;
     leptdb.Put("8", "代码");
@@ -17,5 +17,12 @@ int main() {
     leptdb.Delete("6");
     std::cout << "size: " << leptdb.getMemtableSize() << std::endl;
     leptdb.ShowManifest();
+  }
+  std::string val1, val2;
+  if (leptdb.Get("7", val1)) {
+    std::cout << val1 << std::endl;
+  }
+  if (leptdb.Get("yy", val2)) {
+    std::cout << val2 << std::endl;
   }
 }

@@ -108,7 +108,6 @@ bool SkipList<K, V>::searchElement(const K &key, K &value) {
     }
   }
   current = current->forward[0];
-  // value为空表示已被删除
   if (current && current->getKey() == key) {
     value = current->getValue();
     return true;

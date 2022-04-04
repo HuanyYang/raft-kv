@@ -36,13 +36,16 @@ bool Leptdb::Put(const std::string &key, const std::string &value) {
 
 bool Leptdb::Delete(const std::string &key) { return Put(key, ""); }
 
-bool Leptdb::Get(const std::string &key, std::string value) {
-  if (wtable_->searchElement(key, value) ||
-      rtable_->searchElement(key, value)) {
-    if (!value.empty())
+bool Leptdb::Get(const std::string &key, std::string &value) {
+  std::string tmpValue;
+  if (wtable_->searchElement(key, tmpValue) ||
+      rtable_->searchElement(key, tmpValue) || SearchSST(key, tmpValue)) {
+    // value为空表示已被删除
+    if (!tmpValue.empty()) {
+      value = tmpValue;
       return true;
+    }
   }
-  // TODO search sst
   return false;
 }
 
@@ -95,8 +98,7 @@ bool Leptdb::Flush() {
 }
 
 void Leptdb::FlushRTable() {
-  // 直接dump成level-0的sst
-  // 清空rtalbe_和rtableLog_
+  // 直接dump成level-0的sst，清空rtalbe_和rtableLog_
   int count = manifest->getLeveCount(0) + 1;
   BuildSST(0, count);
   manifest->setLevelCount(0, count);
@@ -123,6 +125,27 @@ void Leptdb::BuildSST(int level, int seq) {
   }
   ofs.flush();
   ofs.close();
+}
+
+bool Leptdb::SearchSST(const std::string &key, std::string &value) {
+  std::ifstream ifs;
+  std::string sstPath, line, tmpK, tmpV;
+  for (int level = 0; level < manifest->getTotalLevel(); ++level) {
+    for (int seq = manifest->getLeveCount(level); seq > 0; --seq) {
+      sstPath = dbname_ + "/" + makeSeq(level) + makeSeq(seq) + ".sst";
+      //      std::cout << "sstPath: " << sstPath << std::endl;
+      ifs.open(sstPath);
+      while (getline(ifs, line)) {
+        splitKV(line, tmpK, tmpV);
+        if (tmpK == key && !tmpV.empty()) {
+          value = tmpV;
+          return true;
+        }
+      }
+      ifs.close();
+    }
+  }
+  return false;
 }
 
 void Leptdb::CompactSST() {}

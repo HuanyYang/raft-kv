@@ -19,7 +19,7 @@ public:
 
   bool Put(const std::string &key, const std::string &value);
   bool Delete(const std::string &key);
-  bool Get(const std::string &key, std::string value);
+  bool Get(const std::string &key, std::string &value);
 
   void ShowWtable();
   void ShowRtable();
@@ -33,6 +33,7 @@ private:
   bool Flush();
   void FlushRTable();
   void BuildSST(int level, int seq);
+  bool SearchSST(const std::string &key, std::string &value);
   void CompactSST();
 
   const std::string dbname_;
