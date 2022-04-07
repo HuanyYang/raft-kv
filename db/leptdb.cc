@@ -106,12 +106,8 @@ void Leptdb::FlushRTable() {
   rtableLog_->ClearLog();
 }
 
-std::string makeSeq(int seq) {
-  if (seq < 10) {
-    return "0" + std::to_string(seq);
-  } else {
-    return std::to_string(seq);
-  }
+std::string makeSeq(const int seq) {
+  return (seq < 10 ? "0" : "") + std::to_string(seq);
 }
 
 void Leptdb::BuildSST(int level, int seq) {

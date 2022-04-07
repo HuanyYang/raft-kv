@@ -38,3 +38,8 @@
 #cmake
 cmake-build-debug/
 build/
+
+#db
+*.log
+*.sst
+manifest
