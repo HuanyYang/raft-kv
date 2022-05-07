@@ -51,7 +51,7 @@ template <typename K, typename V> void Node<K, V>::setValue(V value) {
 
 template <typename K, typename V> class SkipList {
 public:
-  explicit SkipList(int maxlevel = defaultLevel);
+  explicit SkipList(int maxLevel = defaultLevel);
   SkipList(const SkipList &) = delete;
   SkipList &operator=(const SkipList &) = delete;
   ~SkipList();
@@ -69,23 +69,23 @@ public:
   void Clear();
 
 private:
-  Node<K, V> *createNode(K, V, int);
+  Node<K, V> *createNode(const K &key, const V &value, int level);
   int getRandomLevel();
 
-  int maxLevel;
-  int skipListLevel;
-  Node<K, V> *header;
+  int maxLevel_;
+  int skipListLevel_;
   int elementCount_;
+  Node<K, V> *header;
 };
 
-template <typename K, typename V> SkipList<K, V>::SkipList(int maxlevel) {
-  maxLevel = maxlevel;
-  skipListLevel = 0;
+template <typename K, typename V> SkipList<K, V>::SkipList(int maxLevel) {
+  maxLevel_ = maxLevel;
+  skipListLevel_ = 0;
   elementCount_ = 0;
 
   K k;
   V v;
-  header = new Node<K, V>(k, v, maxlevel);
+  header = new Node<K, V>(k, v, maxLevel);
 }
 
 template <typename K, typename V> SkipList<K, V>::~SkipList() {
@@ -94,15 +94,16 @@ template <typename K, typename V> SkipList<K, V>::~SkipList() {
 }
 
 template <typename K, typename V>
-Node<K, V> *SkipList<K, V>::createNode(const K k, const V v, int level) {
-  auto *node = new Node<K, V>(k, v, level);
+Node<K, V> *SkipList<K, V>::createNode(const K &key, const V &value,
+                                       int level) {
+  auto *node = new Node<K, V>(key, value, level);
   return node;
 }
 
 template <typename K, typename V>
 bool SkipList<K, V>::searchElement(const K &key, K &value) {
   Node<K, V> *current = header;
-  for (int i = skipListLevel; i >= 0; --i) {
+  for (int i = skipListLevel_; i >= 0; --i) {
     while (current->forward[i] && current->forward[i]->getKey() < key) {
       current = current->forward[i];
     }
@@ -118,10 +119,12 @@ bool SkipList<K, V>::searchElement(const K &key, K &value) {
 template <typename K, typename V>
 bool SkipList<K, V>::insertElement(const K &key, const V &value) {
   Node<K, V> *current = header;
-  Node<K, V> *prevNodes[maxLevel + 1];
-  memset(prevNodes, 0, sizeof(Node<K, V> *) * (maxLevel + 1));
+  Node<K, V> *prevNodes[maxLevel_ + 1];
+  memset(prevNodes, 0, sizeof(Node<K, V> *) * (maxLevel_ + 1));
 
-  for (int i = skipListLevel; i >= 0; --i) {
+  // 找到 键>=key 的第一个节点
+  // prevNodes记录降层时的节点
+  for (int i = skipListLevel_; i >= 0; --i) {
     while (current->forward[i] && current->forward[i]->getKey() < key) {
       current = current->forward[i];
     }
@@ -129,23 +132,22 @@ bool SkipList<K, V>::insertElement(const K &key, const V &value) {
   }
   current = current->forward[0];
 
-  if (!current || current->getKey() != key) {
+  if (current == nullptr || current->getKey() != key) {
     int randomLevel = getRandomLevel();
-    if (randomLevel > skipListLevel) {
-      for (int i = skipListLevel + 1; i <= randomLevel; ++i) {
+    if (randomLevel > skipListLevel_) {
+      for (int i = skipListLevel_ + 1; i <= randomLevel; ++i) {
         prevNodes[i] = header;
       }
-      skipListLevel = randomLevel;
+      skipListLevel_ = randomLevel;
     }
 
     Node<K, V> *newNode = createNode(key, value, randomLevel);
+    ++elementCount_;
 
     for (int i = 0; i <= randomLevel; ++i) {
       newNode->forward[i] = prevNodes[i]->forward[i];
       prevNodes[i]->forward[i] = newNode;
     }
-
-    ++elementCount_;
   } else {
     // key相同则替换
     current->setValue(value);
@@ -156,9 +158,9 @@ bool SkipList<K, V>::insertElement(const K &key, const V &value) {
 template <typename K, typename V>
 void SkipList<K, V>::deleteElement(const K &key) {
   Node<K, V> *current = header;
-  Node<K, V> *prevNodes[maxLevel + 1];
+  Node<K, V> *prevNodes[maxLevel_ + 1];
 
-  for (int i = skipListLevel; i >= 0; --i) {
+  for (int i = skipListLevel_; i >= 0; --i) {
     while (current->forward[i] && current->forward[i]->getKey() < key) {
       current = current->forward[i];
     }
@@ -166,13 +168,13 @@ void SkipList<K, V>::deleteElement(const K &key) {
   }
   current = current->forward[0];
   if (current && current->getKey() == key) {
-    for (int i = 0; i <= skipListLevel; ++i) {
+    for (int i = 0; i <= skipListLevel_; ++i) {
       if (prevNodes[i]->forward != current)
         break;
       prevNodes[i]->forward[i] = current->forward[i];
     }
-    while (skipListLevel > 0 && !header->forward[skipListLevel]) {
-      --skipListLevel;
+    while (skipListLevel_ > 0 && !header->forward[skipListLevel_]) {
+      --skipListLevel_;
     }
     delete current;
     --elementCount_;
@@ -195,7 +197,7 @@ template <typename K, typename V> int SkipList<K, V>::elementCount() {
 
 template <typename K, typename V> void SkipList<K, V>::displayList() {
   std::cout << "elementCount_: " << elementCount_ << std::endl;
-  for (int i = skipListLevel; i >= 0; --i) {
+  for (int i = skipListLevel_; i >= 0; --i) {
     Node<K, V> *node = this->header->forward[i];
     std::cout << "Level " << i << ": ";
     while (node) {
@@ -211,7 +213,7 @@ template <typename K, typename V> int SkipList<K, V>::getRandomLevel() {
   static std::uniform_int_distribution<unsigned> ud(1, 100);
 
   int level = 1;
-  while (ud(engine) % 2 && level < maxLevel)
+  while (ud(engine) % 2 && level < maxLevel_)
     ++level;
   return level;
 }
